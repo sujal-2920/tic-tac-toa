@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f1f3f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        .container {
+            text-align: center;
+            width: 100%;
+            max-width: 480px;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .player-names {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .player-names input {
+            padding: 10px;
+            font-size: 1.2rem;
+            width: 120px;
+            border-radius: 8px;
+            border: 2px solid #ccc;
+            text-align: center;
+            transition: border-color 0.3s;
+        }
+
+        .player-names input:focus {
+            border-color: #4CAF50;
+            outline: none;
+        }
+
+        #gameBoard {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .cell {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.5rem;
+            background-color: #f7f7f7;
+            border: 2px solid #ccc;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        .cell:hover {
+            background-color: #e1e1e1;
+            transform: scale(1.05);
+        }
+
+        .highlight {
+            background-color: #ffeb3b;
+        }
+
+        .message {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .reset-btn {
+            margin-top: 25px;
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .reset-btn:hover {
+            background-color: #45a049;
+        }
+
+        .footer {
+            margin-top: 40px;
+            font-size: 0.9rem;
+            color: #888;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tic Tac Toe</h1>
+
+        <!-- Player Name Inputs -->
+        <div class="player-names">
+            <input type="text" id="playerX" placeholder="Player X" value="Player X">
+            <input type="text" id="playerO" placeholder="Player O" value="Player O">
+        </div>
+
+        <!-- Game Board -->
+        <div id="gameBoard">
+            <!-- Cells will be dynamically inserted here -->
+        </div>
+
+        <!-- Message Display -->
+        <div class="message" id="message">Player X's turn</div>
+
+        <!-- Reset Button -->
+        <button class="reset-btn" id="resetBtn">Reset Game</button>
+    </div>
+
+    <div class="footer">
+        <p>Made with ❤️ by You</p>
+    </div>
+
+    <script>
+        const gameBoard = document.getElementById('gameBoard');
+        const message = document.getElementById('message');
+        const resetBtn = document.getElementById('resetBtn');
+
+        const playerXInput = document.getElementById('playerX');
+        const playerOInput = document.getElementById('playerO');
+
+        let currentPlayer = 'X';
+        let board = ['', '', '', '', '', '', '', '', ''];
+        let gameActive = true;
+        let winningCombination = [];
+
+        // Create the board
+        function createBoard() {
+            gameBoard.innerHTML = '';
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.addEventListener('click', () => makeMove(i));
+                gameBoard.appendChild(cell);
+            }
+        }
+
+        // Make a move
+        function makeMove(index) {
+            if (board[index] || !gameActive) return; // If the cell is already occupied or the game is over
+
+            board[index] = currentPlayer;
+            updateBoard();
+            checkWinner();
+            togglePlayer();
+        }
+
+        // Update the board UI
+        function updateBoard() {
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach((cell, index) => {
+                cell.textContent = board[index];
+            });
+        }
+
+        // Check for a winner
+        function checkWinner() {
+            const winPatterns = [
+                [0, 1, 2],
+                [3, 4, 5],
+                [6, 7, 8],
+                [0, 3, 6],
+                [1, 4, 7],
+                [2, 5, 8],
+                [0, 4, 8],
+                [2, 4, 6]
+            ];
+
+            for (let pattern of winPatterns) {
+                const [a, b, c] = pattern;
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    gameActive = false;
+                    winningCombination = pattern;
+                    highlightWinner(pattern);
+                    message.textContent = `${currentPlayer} wins!`;
+                    return;
+                }
+            }
+
+            if (!board.includes('')) {
+                gameActive = false;
+                message.textContent = 'It\'s a tie!';
+            } else {
+                message.textContent = `${getCurrentPlayerName()}'s turn`;
+            }
+        }
+
+        // Highlight the winning combination
+        function highlightWinner(pattern) {
+            const cells = document.querySelectorAll('.cell');
+            pattern.forEach(index => {
+                cells[index].classList.add('highlight');
+            });
+        }
+
+        // Get the current player's name
+        function getCurrentPlayerName() {
+            return currentPlayer === 'X' ? playerXInput.value : playerOInput.value;
+        }
+
+        // Toggle the current player
+        function togglePlayer() {
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+        }
+
+        // Reset the game
+        function resetGame() {
+            board = ['', '', '', '', '', '', '', '', ''];
+            gameActive = true;
+            currentPlayer = 'X';
+            winningCombination = [];
+            message.textContent = `${playerXInput.value}'s turn`;
+            updateBoard();
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach(cell => {
+                cell.classList.remove('highlight');
+            });
+        }
+
+        // Event listener for reset button
+        resetBtn.addEventListener('click', resetGame);
+
+        // Initialize the game
+        createBoard();
+    </script>
+</body>
+</html>
